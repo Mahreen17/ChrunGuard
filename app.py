@@ -737,6 +737,7 @@ st.markdown("### 📄 Export Report")
 
 if not FPDF_AVAILABLE:
     st.warning("fpdf2 not found. Run: pip install fpdf2 then restart Streamlit.")
+
 else:
     class PDF(FPDF):
         def header(self):
@@ -746,7 +747,7 @@ else:
     try:
         pdf = PDF()
         pdf.add_page()
-        pdf.set_font("Helvetica", "", 11)
+        pdf.set_font("Helvetica", "B", 12)
         pdf.set_text_color(30, 30, 30)
 
         pdf.cell(0, 10, "Sample Report Content", new_x="LMARGIN", new_y="NEXT")
