@@ -737,7 +737,6 @@ st.markdown("### 📄 Export Report")
 
 if not FPDF_AVAILABLE:
     st.warning("fpdf2 not found. Run: pip install fpdf2 then restart Streamlit.")
-
 else:
     class PDF(FPDF):
         def header(self):
