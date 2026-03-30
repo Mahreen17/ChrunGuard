@@ -732,25 +732,16 @@ with tab1:
         st.plotly_chart(fig, use_container_width=True)
 
         # ── PDF Export ────────────────────────────────────────────────────────
-       st.markdown('<hr class="divider">', unsafe_allow_html=True)
+st.markdown('<hr class="divider">', unsafe_allow_html=True)
 st.markdown("### 📄 Export Report")
 
 if not FPDF_AVAILABLE:
     st.warning("fpdf2 not found. Run: pip install fpdf2 then restart Streamlit.")
-
 else:
     class PDF(FPDF):
         def header(self):
             self.set_font("Helvetica", "B", 16)
-            self.set_text_color(15, 130, 140)
-            self.cell(
-                0, 12,
-                "Churn Intelligence - Prediction Report",
-                new_x="LMARGIN", new_y="NEXT", align="C"
-            )
-            self.set_draw_color(120, 185, 181)
-            self.line(10, 22, 200, 22)
-            self.ln(6)
+            self.cell(0, 10, "Report", new_x="LMARGIN", new_y="NEXT")
 
     try:
         pdf = PDF()
