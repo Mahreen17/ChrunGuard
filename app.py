@@ -7,6 +7,12 @@ import time
 import sqlite3
 from datetime import datetime
 
+try:
+    from fpdf import FPDF
+    FPDF_AVAILABLE = True
+except ImportError:
+    FPDF_AVAILABLE = False
+
 # ── PAGE CONFIG ───────────────────────────────────────────────────────────────
 st.set_page_config(page_title="Churn Intelligence", page_icon="📡", layout="wide")
 
@@ -728,24 +734,34 @@ with tab1:
         # ── PDF Export ────────────────────────────────────────────────────────
         st.markdown('<hr class="divider">', unsafe_allow_html=True)
         st.markdown("### 📄 Export Report")
+        if not FPDF_AVAILABLE:
+    st.warning("fpdf2 not found. Run: pip install fpdf2 then restart Streamlit.")
+else:
+    class PDF(FPDF):
+        def header(self):
+            self.set_font("Helvetica", "B", 16)
+            self.set_text_color(15, 130, 140)
+            self.cell(0, 12, "Churn Intelligence - Prediction Report",
+                      new_x="LMARGIN", new_y="NEXT", align="C")
+            self.set_draw_color(120, 185, 181)
+            self.line(10, 22, 200, 22)
+            self.ln(6)
+        
         try:
-            from fpdf import FPDF
-
-            class PDF(FPDF):
-                def header(self):
-                    self.set_font("Helvetica", "B", 16)
-                    self.set_text_color(15, 130, 140)
-                    # Plain ASCII only — no em-dash, no emoji
-                    self.cell(0, 12, "Churn Intelligence - Prediction Report",
-                              new_x="LMARGIN", new_y="NEXT", align="C")
-                    self.set_draw_color(120, 185, 181)
-                    self.line(10, 22, 200, 22)
-                    self.ln(6)
-
             pdf = PDF()
             pdf.add_page()
             pdf.set_font("Helvetica", "", 11)
             pdf.set_text_color(30, 30, 30)
+
+            pdf_bytes = pdf.output()
+        st.download_button(
+            label="Download PDF Report",
+            data=bytes(pdf_bytes),
+            file_name=f"churn_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+            mime="application/pdf"
+        )
+    except Exception as e:
+        st.error(f"PDF generation failed: {e}")
 
             # Section: Prediction Summary
             pdf.set_font("Helvetica", "B", 12)
