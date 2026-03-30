@@ -7,11 +7,7 @@ import time
 import sqlite3
 from datetime import datetime
 
-try:
-    from fpdf import FPDF
-    FPDF_AVAILABLE = True
-except ImportError:
-    FPDF_AVAILABLE = False
+
 
 # ── PAGE CONFIG ───────────────────────────────────────────────────────────────
 st.set_page_config(page_title="Churn Intelligence", page_icon="📡", layout="wide")
@@ -731,37 +727,6 @@ with tab1:
         )
         st.plotly_chart(fig, use_container_width=True)
 
-        # ── PDF Export ────────────────────────────────────────────────────────
-st.markdown('<hr class="divider">', unsafe_allow_html=True)
-st.markdown("### 📄 Export Report")
-
-if not FPDF_AVAILABLE:
-    st.warning("fpdf2 not found. Run: pip install fpdf2 then restart Streamlit.")
-else:
-    class PDF(FPDF):
-        def header(self):
-            self.set_font("Helvetica", "B", 16)
-            self.cell(0, 10, "Report", new_x="LMARGIN", new_y="NEXT")
-
-    try:
-        pdf = PDF()
-        pdf.add_page()
-        pdf.set_font("Helvetica", "B", 12)
-        pdf.set_text_color(30, 30, 30)
-
-        pdf.cell(0, 10, "Sample Report Content", new_x="LMARGIN", new_y="NEXT")
-
-        pdf_bytes = pdf.output(dest='S').encode('latin1')
-
-        st.download_button(
-            label="Download PDF Report",
-            data=pdf_bytes,
-            file_name=f"churn_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
-            mime="application/pdf"
-        )
-
-    except Exception as e:
-        st.error(f"PDF generation failed: {e}")
 
             # Section: Prediction Summary
             pdf.set_font("Helvetica", "B", 12)
