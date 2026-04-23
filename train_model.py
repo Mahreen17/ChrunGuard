@@ -13,45 +13,28 @@ df = df.drop("customerID", axis=1)
 df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce")
 df["TotalCharges"].fillna(df["TotalCharges"].median(), inplace=True)
 
-# ── Engineer high-signal features ─────────────────────────────────────────────
-addon_cols = ["OnlineSecurity", "OnlineBackup", "DeviceProtection",
-              "TechSupport", "StreamingTV", "StreamingMovies"]
+# ── Encode binary columns ─────────────────────────────────────────────────────
+df["Churn"] = df["Churn"].map({"Yes": 1, "No": 0})
+df["gender"] = df["gender"].map({"Male": 1, "Female": 0})
 
-# Replace Yes/No before engineering
-df = df.replace({"Yes": 1, "No": 0})
+# ── One-hot encode remaining categoricals ─────────────────────────────────────
+cat_cols = ["MultipleLines", "InternetService", "OnlineSecurity",
+            "OnlineBackup", "DeviceProtection", "TechSupport",
+            "StreamingTV", "StreamingMovies", "Contract", "PaymentMethod"]
+df = pd.get_dummies(df, columns=cat_cols)
 
-# Count how many add-on services the customer has (0–6)
-df["NumAddonServices"] = df[addon_cols].sum(axis=1)
-
-# ── Select final feature set ───────────────────────────────────────────────────
-# These are the highest-signal features based on telecom churn research
-SELECTED_FEATURES = [
-    "tenure",
-    "MonthlyCharges",
-    "SeniorCitizen",
-    "PaperlessBilling",
-    "NumAddonServices",
-    "TechSupport",
-    "OnlineSecurity",
-    # Categorical → will be one-hot encoded
-    "Contract",
-    "InternetService",
-    "PaymentMethod",
-]
-
-df_model = df[SELECTED_FEATURES + ["Churn"]].copy()
-df_model["Churn"] = df_model["Churn"].replace({"Yes": 1, "No": 0})
-
-# ── One-hot encode categorical columns ────────────────────────────────────────
-df_model = pd.get_dummies(df_model, columns=["Contract", "InternetService", "PaymentMethod"])
+# ── Binary encode remaining yes/no cols ──────────────────────────────────────
+yn_cols = ["Partner", "Dependents", "PhoneService", "PaperlessBilling"]
+for c in yn_cols:
+    df[c] = df[c].map({"Yes": 1, "No": 0})
 
 # ── Split features / target ───────────────────────────────────────────────────
-X = df_model.drop("Churn", axis=1)
-y = df_model["Churn"]
+X = df.drop("Churn", axis=1)
+y = df["Churn"]
 
 # Save column names for app.py to use
 joblib.dump(X.columns.tolist(), "columns.pkl")
-print(f"✅ Saved {len(X.columns)} feature columns: {X.columns.tolist()}")
+print(f"✅ Saved {len(X.columns)} feature columns")
 
 # ── Train / test split ────────────────────────────────────────────────────────
 X_train, X_test, y_train, y_test = train_test_split(
@@ -69,7 +52,7 @@ model = RandomForestClassifier(
     n_estimators=300,
     max_depth=10,
     min_samples_leaf=5,
-    class_weight="balanced",   # handles class imbalance (~26% churn)
+    class_weight="balanced",
     random_state=42,
     n_jobs=-1
 )
@@ -80,4 +63,13 @@ joblib.dump(model, "churn_model.pkl")
 print("\n📊 Test Set Performance:")
 print(classification_report(y_test, model.predict(X_test_scaled),
                              target_names=["Stay", "Churn"]))
-print("✅ Model, scaler, and columns saved successfully!")
+
+# ── Feature Importance Summary ────────────────────────────────────────────────
+import numpy as np
+feat_imp = sorted(zip(X.columns, model.feature_importances_),
+                  key=lambda x: x[1], reverse=True)
+print("\n🏆 Top 10 Feature Importances:")
+for name, imp in feat_imp[:10]:
+    print(f"  {name:<45} {imp:.5f}")
+
+print("\n✅ Model, scaler, and columns saved successfully!")
